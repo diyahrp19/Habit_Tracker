@@ -10,7 +10,7 @@ import csv
 import json
 from .models import Habit, HabitEntry
 from .forms import CustomUserCreationForm, HabitForm, HabitEntryForm
-
+#user registration
 def signup(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
@@ -22,7 +22,7 @@ def signup(request):
     else:
         form = CustomUserCreationForm()
     return render(request, 'registration/signup.html', {'form': form})
-
+# todays habit, streak, progress and all card
 @login_required
 def dashboard(request):
     habits = Habit.objects.filter(user=request.user, is_active=True)
@@ -57,7 +57,7 @@ def dashboard(request):
             'entry': entry,
             'streak': habit.get_current_streak(),
             'progress': habit.get_progress_percentage(),
-            'scheduled_today': scheduled_today,  # ✅ Now it's safe to use
+            'scheduled_today': scheduled_today,  
             'streak_broken': broke_streak_yesterday,
      })
     
@@ -65,9 +65,11 @@ def dashboard(request):
         'habit_data': habit_data,
         'today': today,
     }
+    habit_data.sort(key=lambda x: x['progress'], reverse=True)
+
     
     return render(request, 'habits/dashboard.html', context)
-
+# create habit
 @login_required
 def create_habit(request):
     if request.method == 'POST':
@@ -105,22 +107,20 @@ def delete_habit(request, habit_id):
     if request.method == 'POST':
         habit_name = habit.name
 
-        soft_delete = True  # Change to False if you want hard delete
+        soft_delete = True  
 
         if soft_delete:
-            # Hide the habit but keep its data
             habit.is_active = False
             habit.save()
             messages.success(request, f'Habit "{habit_name}" was deactivated (soft deleted).')
         else:
-            # Remove habit + all related HabitEntry records
             habit.delete()
             messages.success(request, f'Habit "{habit_name}" was permanently deleted with all entries.')
 
         return redirect('dashboard')
 
     return render(request, 'habits/delete_habit.html', {'habit': habit})
-
+# completed / incomplete habit
 @login_required
 def toggle_habit(request, habit_id):
     if request.method == 'POST':
@@ -176,23 +176,20 @@ def analytics(request):
         completed_days = 0
         scheduled_days = 0
 
-        for i in range(31):  # Loop through the last 31 days
+        for i in range(31):  
             current_date = start_date + timedelta(days=i)
 
-            # Only count if habit should be done that day
             if habit.should_be_done_on_date(current_date):
                 scheduled_days += 1
 
-                # Check if that scheduled entry was completed
                 if HabitEntry.objects.filter(habit=habit, date=current_date, completed=True).exists():
                     completed_days += 1
 
-        # Avoid divide-by-zero and retain float
         percentage = (completed_days / scheduled_days) * 100 if scheduled_days > 0 else 0.0
 
         habit_performance.append({
             'name': habit.name,
-            'percentage': habit.get_progress_percentage()  # Rounded to 2 decimals
+            'percentage': habit.get_progress_percentage()  
         })
 
     return render(request, 'habits/analytics.html', {
@@ -208,7 +205,6 @@ def export_csv(request):
 
     writer = csv.writer(response)
     
-    # Write header with updated columns
     writer.writerow([
         'Habit Name', 
         'Frequency', 
@@ -226,7 +222,6 @@ def export_csv(request):
     ).prefetch_related('habitentry_set')
 
     for habit in habits:
-        # Get the last completed entry
         last_completed = habit.habitentry_set.filter(completed=True).order_by('-date').first()
         last_completed_date = last_completed.date if last_completed else "Never"
 
@@ -236,7 +231,7 @@ def export_csv(request):
             "Active" if habit.is_active else "Inactive",
             habit.created_at.date().strftime('%Y-%m-%d'),
             habit.get_current_streak(),
-            f"{habit.get_progress_percentage():.0f}",  # Using the model's progress method
+            f"{habit.get_progress_percentage():.0f}",  
             last_completed_date.strftime('%Y-%m-%d') if last_completed_date != "Never" else "Never",
             "; ".join([e.notes for e in habit.habitentry_set.all() if e.notes])
         ])

@@ -4,6 +4,7 @@ from django.utils import timezone
 from datetime import date, timedelta
 import json
 
+# store habits
 class Habit(models.Model):
 
     FREQUENCY_CHOICES = [
@@ -32,7 +33,6 @@ class Habit(models.Model):
         current_day = today
         streak = 0
 
-    # Check if the habit was created today or later
         if self.created_at.date() > today:
             return 0
 
@@ -46,19 +46,16 @@ class Habit(models.Model):
             if entry and entry.completed:
                 streak += 1
             else:
-            # If today is not completed yet, don't break — just skip.
                 if current_day == today:
                     current_day -= timedelta(days=1)
                     continue
-            # If there is no entry for the day it should have been completed, break the streak
                 break
 
             current_day -= timedelta(days=1)
 
         return streak
-
+# check that habit is done on specific day or not
     def should_be_done_on_date(self, check_date):
-        """Check if habit should be done on a specific date based on frequency"""
         if self.frequency == 'daily':
             return True
         elif self.frequency == 'weekly':
@@ -71,9 +68,8 @@ class Habit(models.Model):
             days_since_created = (check_date - self.created_at.date()).days
             return days_since_created < self.target_days
         return False
-    
+ # percentage for completed habit   
     def get_progress_percentage(self):
-        """Calculate progress percentage for the habit"""
         if self.frequency == 'custom':
             days_since_created = (date.today() - self.created_at.date()).days
             completed_days = HabitEntry.objects.filter(
@@ -86,7 +82,6 @@ class Habit(models.Model):
             if self.target_days > 0:
                 return min((completed_days / self.target_days) * 100, 100)
         else:
-            # For recurring habits, show this week's progress
             week_start = date.today() - timedelta(days=date.today().weekday())
             week_end = week_start + timedelta(days=6)
             
@@ -104,24 +99,22 @@ class Habit(models.Model):
                 return (completed_days / expected_days) * 100
         
         return 0
-    
+# if streak was broken yesterday
     def broke_streak_yesterday(self):
         yesterday = timezone.localdate() - timedelta(days=1)
 
-    # Skip if habit was created today or after yesterday
         if self.created_at.date() >= timezone.localdate():
             return False
 
-    # Only check if yesterday was an active day
         if not self.should_be_done_on_date(yesterday):
             return False
 
         y_entry = HabitEntry.objects.filter(habit=self, date=yesterday).first()
         if not y_entry:
-            return True  # No entry yesterday → broke streak
+            return True  
     
         return not y_entry.completed
-
+# habit entry model
 class HabitEntry(models.Model):
     habit = models.ForeignKey(Habit, on_delete=models.CASCADE)
     date = models.DateField()

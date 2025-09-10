@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import SignUpForm
 
+# display signup form and create new user
 def signup_view(request):
     if request.method == 'POST':
         form = SignUpForm(request.POST)
@@ -15,7 +16,7 @@ def signup_view(request):
     else:
         form = SignUpForm()
     return render(request, 'accounts/signup.html', {'form': form})
-
+# simple profile page for logged-in users
 @login_required
 def profile_view(request):
     return render(request, 'accounts/profile.html')

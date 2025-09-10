@@ -10,7 +10,7 @@
     </a>
 </div>
 
-{% if motivational_tip %}
+{% comment %} {% if motivational_tip %}
 <div class="alert alert-info">
     <i class="fas fa-lightbulb me-2"></i>
     <strong>Daily Motivation:</strong> "{{ motivational_tip.text }}"
@@ -18,7 +18,7 @@
         <em>- {{ motivational_tip.author }}</em>
     {% endif %}
 </div>
-{% endif %}
+{% endif %} {% endcomment %}
 
 <div class="row">
     {% for data in habit_data %}
